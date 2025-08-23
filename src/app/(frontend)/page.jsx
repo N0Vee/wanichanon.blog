@@ -16,43 +16,30 @@ export default async function HomePage() {
   const fileURL = `vscode://file/${fileURLToPath(import.meta.url)}`
 
   return (
-    <div className="home">
-      <div className="content">
-        <picture>
-          <source srcSet="https://raw.githubusercontent.com/payloadcms/payload/main/packages/ui/src/assets/payload-favicon.svg" />
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+      <h1 className="text-4xl font-bold mb-6 text-gray-800">Welcome to the Payload + Next.js App!</h1>
+      {user ? (
+        <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md text-center">
+          <h2 className="text-2xl font-semibold mb-4 text-gray-700">Hello, {user.firstName}!</h2>
+          <p className="text-gray-600 mb-6">You are logged in as {user.email}.</p>
           <Image
-            alt="Payload Logo"
-            height={65}
-            src="https://raw.githubusercontent.com/payloadcms/payload/main/packages/ui/src/assets/payload-favicon.svg"
-            width={65}
+            src={user.avatar?.url || '/default-avatar.png'}
+            alt="User Avatar"
+            width={100}
+            height={100}
+            className="rounded-full mx-auto"
           />
-        </picture>
-        {!user && <h1>Welcome to your new project.</h1>}
-        {user && <h1>Welcome back, {user.email}</h1>}
-        <div className="links">
-          <a
-            className="admin"
-            href={payloadConfig.routes.admin}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Go to admin panel
-          </a>
-          <a
-            className="docs"
-            href="https://payloadcms.com/docs"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Documentation
-          </a>
         </div>
-      </div>
-      <div className="footer">
-        <p>Update this page by editing</p>
-        <a className="codeLink" href={fileURL}>
-          <code>app/(frontend)/page.jsx</code>
-        </a>
+      ) : (
+        <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md text-center">
+          <h2 className="text-2xl font-semibold mb-4 text-gray-700">You are not logged in.</h2>
+          <p className="text-gray-600">Please log in to access your account details.</p>
+        </div>
+      )}
+      <div className="mt-8 p-4 bg-white rounded-lg shadow-md w-full max-w-md text-center">
+        <p className="text-gray-600">
+          Open this file in VSCode: <a href={fileURL} className="text-blue-500 underline">{fileURL}</a>
+        </p>
       </div>
     </div>
   )

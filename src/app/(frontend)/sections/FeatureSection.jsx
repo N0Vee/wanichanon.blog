@@ -1,0 +1,251 @@
+"use client";
+
+import { motion } from "framer-motion";
+import Image from "next/image";
+import { useEffect, useState, useRef } from "react";
+import Link from "next/link";
+import { formatDate } from "@/app/utils";
+
+export default function FeaturedSection() {
+  const [mounted, setMounted] = useState(false);
+  const [featuredPosts, setFeaturedPosts] = useState([]);
+  const hasFetched = useRef(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+        delayChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 30, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+    },
+  };
+
+  useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
+    const fetchData = async () => {
+      try {
+        const baseUrl =
+          process.env.NEXT_PUBLIC_WEBSITE_URL || window.location.origin;
+        const res = await fetch(
+          `${baseUrl}/api/posts?where[featured][equals]=true`
+        );
+
+        if (!res.ok) {
+          console.error("Failed to fetch posts:", res.status);
+          return;
+        }
+
+        const data = await res.json();
+        // Filter for featured posts as backup (in case API filter doesn't work)
+        const featured = data.docs.filter((post) => post.featured === true);
+
+        // If no featured posts found, take first 3 posts as featured
+        const finalFeatured =
+          featured.length > 0 ? featured : data.docs.slice(0, 3);
+
+        setFeaturedPosts(finalFeatured);
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (!mounted) return null;
+
+  return (
+    <section
+      id="featured"
+      className="relative py-20 bg-gradient-to-b from-slate-800 to-slate-700 overflow-hidden"
+    >
+      {/* Background decoration */}
+      <div className="absolute inset-0 overflow-hidden">
+        <motion.div
+          className="absolute top-20 right-20 w-64 h-64 bg-gradient-to-r from-amber-500/10 to-emerald-500/10 rounded-full blur-3xl"
+          animate={{
+            scale: [1, 1.1, 1],
+            opacity: [0.3, 0.5, 0.3],
+          }}
+          transition={{
+            duration: 6,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-6">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+        >
+          {/* Section Header */}
+          <motion.div variants={itemVariants} className="text-center mb-16">
+            <motion.div className="inline-flex items-center glass-card px-4 py-2 rounded-full mb-6 border border-amber-500/20">
+              <i className="fas fa-star text-amber-400 mr-2" />
+              <span className="text-slate-300 text-sm font-medium">
+                Featured Articles
+              </span>
+            </motion.div>
+          </motion.div>
+
+          {/* Featured Posts Grid */}
+          {featuredPosts.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Main Featured Post */}
+              <motion.article
+                variants={itemVariants}
+                className="lg:col-span-2 group cursor-pointer"
+              >
+                <Link href={`/post/${featuredPosts[0].id}`}>
+                  <div className="glass-card rounded-2xl overflow-hidden border border-slate-700/30 hover:border-amber-500/40 transition-all duration-500">
+                    {/* Image placeholder */}
+                    <div className="relative h-64 md:h-80 bg-gradient-to-br from-amber-500/20 to-emerald-500/20 overflow-hidden">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        {featuredPosts[0]?.thumbnail ? (
+                          <Image
+                            src={featuredPosts[0].thumbnail.url}
+                            alt={featuredPosts[0].title}
+                            layout="fill"
+                            objectFit="cover"
+                          />
+                        ) : (
+                          <i className="fas fa-image" />
+                        )}
+                      </div>
+                      <div className="absolute top-4 left-4">
+                        <span className="glass px-3 py-1 rounded-full text-xs font-medium text-amber-300 border border-amber-500/30">
+                          Featured
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-6 md:p-8">
+                      <div className="flex items-center space-x-4 mb-4">
+                        <span className="text-amber-400 text-sm font-medium">
+                          {featuredPosts[0]?.category || "Tech"}
+                        </span>
+                        <span className="text-slate-500">•</span>
+                        <span className="text-slate-400 text-sm">
+                          {featuredPosts[0]?.readTime || "5 min read"}
+                        </span>
+                        <span className="text-slate-500">•</span>
+                        <span className="text-slate-400 text-sm">
+                          {formatDate(
+                            featuredPosts[0]?.date || new Date().toISOString()
+                          )}
+                        </span>
+                      </div>
+
+                      <h3 className="text-2xl md:text-3xl font-bold text-slate-100 mb-4 group-hover:text-amber-300 transition-colors duration-300">
+                        {featuredPosts[0]?.title || "Featured Article"}
+                      </h3>
+
+                      <p className="text-slate-400 text-lg leading-relaxed mb-6">
+                        {featuredPosts[0]?.excerpt ||
+                          "This is a featured article excerpt..."}
+                      </p>
+
+                      <motion.button
+                        className="inline-flex items-center space-x-2 text-amber-400 hover:text-amber-300 font-medium transition-colors duration-300"
+                        whileHover={{ x: 5 }}
+                      >
+                        <span>Read More</span>
+                        <i className="fas fa-arrow-right" />
+                      </motion.button>
+                    </div>
+                  </div>
+                </Link>
+              </motion.article>
+
+              {/* Side Posts */}
+              <motion.div variants={itemVariants} className="space-y-6">
+                {featuredPosts.slice(1).map((post) => (
+                  <motion.article
+                    key={post.id}
+                    className="glass-card rounded-xl p-6 border border-slate-700/30 hover:border-emerald-500/40 hover:shadow-lg duration-100 cursor-pointer group"
+                    whileHover={{ y: -4 }}
+                  >
+                    <Link href={`/post/${post.id}`}>
+                      <div className="flex items-start space-x-4">
+                        <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-amber-500/20 rounded-lg flex items-center justify-center">
+                          <motion.i
+                            className="fas fa-bookmark text-emerald-400"
+                            whileHover={{ scale: 1.2 }}
+                          />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className="text-emerald-400 text-xs font-medium">
+                              {post.category}
+                            </span>
+                            <span className="text-slate-500 text-xs">
+                              {post.readTime}
+                            </span>
+                          </div>
+
+                          <h3 className="text-lg font-semibold text-slate-100 mb-2 line-clamp-2 group-hover:text-emerald-300 transition-colors duration-300">
+                            {post.title}
+                          </h3>
+
+                          <p className="text-slate-400 text-sm line-clamp-2 mb-3">
+                            {post.excerpt}
+                          </p>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-500 text-xs">
+                              {formatDate(post.date)}
+                            </span>
+                            <motion.button
+                              className="text-emerald-400 hover:text-emerald-300 transition-colors duration-300"
+                              whileHover={{ scale: 1.1 }}
+                            >
+                              <i className="fas fa-chevron-right" />
+                            </motion.button>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  </motion.article>
+                ))}
+              </motion.div>
+            </div>
+          ) : (
+            // Loading/Empty State
+            <motion.div variants={itemVariants} className="text-center py-20">
+              <div className="glass-card p-8 rounded-2xl max-w-md mx-auto">
+                <i className="fas fa-star text-4xl text-amber-400/60 mb-4" />
+                <h3 className="text-lg font-medium text-slate-300 mb-2">
+                  Loading Featured Articles...
+                </h3>
+                <p className="text-slate-500 text-sm">
+                  Please wait while we fetch the latest featured content.
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </motion.div>
+      </div>
+    </section>
+  );
+}

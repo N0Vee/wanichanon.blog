@@ -11,13 +11,14 @@ import PostContent from "./PostContent";
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }) {
+  const resolvedParams = await params;
   const payloadConfig = config;
   const payload = await getPayload({ config: payloadConfig });
 
   try {
     const post = await payload.findByID({
       collection: 'posts',
-      id: params.id,
+      id: resolvedParams.id,
       depth: 1,
     });
 
@@ -47,12 +48,13 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function PostPage({ params }) {
+  const resolvedParams = await params;
   const _fileURL = `vscode://file/${fileURLToPath(import.meta.url)}`;
 
   return (
     <>
       <Navigation active="articles" />
-      <PostContent postId={params.id} />
+      <PostContent postId={resolvedParams.id} />
       <Footer />
     </>
   );

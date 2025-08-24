@@ -496,10 +496,7 @@ export default function PostContent({ postId }) {
                   <i className="fas fa-bookmark" />
                   <span>{headings.length} sections</span>
                 </span>
-                <span className="flex items-center space-x-1">
-                  <i className="fas fa-eye" />
-                  <span>Auto-scroll</span>
-                </span>
+                
               </div>
             </motion.div>
           )}
@@ -755,26 +752,7 @@ export default function PostContent({ postId }) {
                 variants={itemVariants}
                 className="glass-card border border-slate-700/30 rounded-2xl p-8 md:p-12"
               >
-                {/* Tags */}
-                {post.tags && post.tags.length > 0 && (
-                  <motion.div variants={itemVariants} className="mb-12">
-                    <h3 className="text-lg font-medium text-slate-300 mb-4 flex items-center space-x-2">
-                      <i className="fas fa-tags text-emerald-400" />
-                      <span>Tags</span>
-                    </h3>
-                    <div className="flex flex-wrap gap-3">
-                      {post.tags.map((tagItem, index) => (
-                        <motion.span
-                          key={index}
-                          whileHover={{ scale: 1.05 }}
-                          className="px-4 py-2 glass rounded-full text-sm text-slate-300 border border-slate-600/40 hover:border-emerald-500/40 transition-all duration-300 font-medium"
-                        >
-                          #{tagItem.tag || tagItem}
-                        </motion.span>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
+                
 
                 {/* Article Content */}
                 <motion.div variants={itemVariants}>
@@ -789,38 +767,6 @@ export default function PostContent({ postId }) {
                   )}
                 </motion.div>
 
-                {/* Share Section */}
-                <motion.div
-                  variants={itemVariants}
-                  className="mt-16 pt-8 border-t border-slate-700/30"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-                    <div>
-                      <h3 className="text-xl font-semibold text-slate-200 mb-2">
-                        Enjoyed this article?
-                      </h3>
-                      <p className="text-slate-400">
-                        Share it with others who might find it useful.
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      {[
-                        { platform: 'twitter', icon: 'fab fa-twitter', color: 'hover:text-blue-400 hover:border-blue-500/40' },
-                        { platform: 'linkedin', icon: 'fab fa-linkedin-in', color: 'hover:text-blue-600 hover:border-blue-600/40' },
-                        { platform: 'facebook', icon: 'fab fa-facebook-f', color: 'hover:text-blue-500 hover:border-blue-500/40' }
-                      ].map(({ platform, icon, color }) => (
-                        <motion.button
-                          key={platform}
-                          whileHover={{ scale: 1.1, y: -2 }}
-                          whileTap={{ scale: 0.95 }}
-                          className={`w-12 h-12 glass-card border border-slate-600/40 rounded-full flex items-center justify-center text-slate-400 transition-all duration-300 ${color}`}
-                        >
-                          <i className={icon} />
-                        </motion.button>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
               </motion.div>
             </div>
           </div>

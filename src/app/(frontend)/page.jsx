@@ -6,10 +6,9 @@ import config from "@/payload.config";
 
 import "./styles.css";
 import Navigation from "@/app/(frontend)/components/Navigation";
-import HeroSection from "@/app/(frontend)/sections/HeroSection";
 import FeaturedSection from "@/app/(frontend)/sections/FeatureSection";
 import ArticleSection from "@/app/(frontend)/sections/ArticleSection";
-// import NewsletterSection from "@/app/sections/NewsletterSection";
+import NewsletterSection from "@/app/(frontend)/sections/NewsletterSection";
 import Footer from "@/app/(frontend)/components/Footer";
 
 export default async function HomePage() {
@@ -24,18 +23,15 @@ export default async function HomePage() {
     <>
       <Navigation />
       <main>
-        <section id="home">
-          <HeroSection />
-        </section>
         <section id="featured">
           <FeaturedSection />
         </section>
         <section id="articles">
           <ArticleSection />
         </section>
-        {/* <section id="newsletter">
+        <section id="newsletter">
           <NewsletterSection />
-        </section> */}
+        </section>
       </main>
       <Footer />
     </>

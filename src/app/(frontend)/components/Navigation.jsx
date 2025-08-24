@@ -11,7 +11,6 @@ export default function Navigation({ active }) {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   
   const navItems = [
-    { id: "home", href: "#home", label: "Home", icon: "fas fa-home" },
     { id: "featured", href: "#featured", label: "Featured", icon: "fas fa-star" },
     { id: "articles", href: "#articles", label: "Articles", icon: "fas fa-newspaper" },
     { id: "newsletter", href: "#newsletter", label: "Newsletter", icon: "fas fa-envelope" }

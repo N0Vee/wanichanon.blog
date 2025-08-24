@@ -114,6 +114,10 @@ export default function FeaturedSection() {
               {/* Main Featured Post */}
               <motion.article
                 variants={itemVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.3 }}
+
                 className="lg:col-span-2 group cursor-pointer"
               >
                 <Link href={`/post/${featuredPosts[0].id}`}>

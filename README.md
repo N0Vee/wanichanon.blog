@@ -164,7 +164,7 @@ BLOB_READ_WRITE_TOKEN=your-production-blob-token
 If you have any questions or issues:
 
 - Open an [issue](https://github.com/N0Vee/wanichanon.blog/issues)
-- Contact: [wanichanonsaelee@gmail.com](mailto:wanichanonsaelee@gmail.com)
+- Contact: [wanichanon.work@gmail.com](mailto:wanichanon.work@gmail.com)
 
 ## 🙏 Acknowledgments
 

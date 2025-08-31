@@ -23,7 +23,7 @@
     "@payloadcms/payload-cloud": "3.53.0",
     "@payloadcms/richtext-lexical": "3.53.0",
     "@payloadcms/storage-vercel-blob": "^3.53.0",
-    "@payloadcms/ui": "3.53.0",
+    "@payloadcms/ui": "^3.53.0",
     "@tailwindcss/postcss": "^4.1.12",
     "cross-env": "^7.0.3",
     "dotenv": "16.4.7",
@@ -34,7 +34,7 @@
     "postcss": "^8.5.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "react-syntax-highlighter": "^15.6.3",
+    "react-syntax-highlighter": "^15.6.6",
     "sharp": "0.34.2",
     "tailwindcss": "^4.1.12"
   },

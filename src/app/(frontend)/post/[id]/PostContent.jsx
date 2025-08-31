@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import React from "react";
 import { motion } from "framer-motion";
-import SyntaxHighlighter from "react-syntax-highlighter";
-import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import Image from "next/image";
 import { formatDate } from "@/app/utils/dateUtils";
+import CodeBlock from "../../components/CodeBlock";
 
 export default function PostContent({ postId }) {
   const [mounted, setMounted] = useState(false);
@@ -63,7 +64,7 @@ export default function PostContent({ postId }) {
     return (
       <SyntaxHighlighter
         language={detectedLanguage}
-        style={atomOneDark}
+        style={oneDark}
         customStyle={{
           margin: 0,
           padding: '1rem',
@@ -92,6 +93,8 @@ export default function PostContent({ postId }) {
     if (!contentObj.root?.children) {
       return <p className="text-slate-300">No content found.</p>;
     }
+
+
 
     const getPlainText = (nodes) => {
       if (!Array.isArray(nodes)) return "";
@@ -318,6 +321,51 @@ export default function PostContent({ postId }) {
               </div>
             </li>
           );
+        }
+
+        case "block": {
+          // Handle Lexical blocks (including our custom CodeBlock)
+          // Check both locations for blockType
+          if (node.fields?.blockType === "codeBlock" || node.blockType === "codeBlock" || node.format === "codeBlock") {
+            const codeContent = node.fields?.code || "";
+            const language = node.fields?.language || "javascript";
+            
+            return (
+              <div key={nodeId} className="mb-6">
+                <div className="bg-slate-900/90 border border-slate-700/50 rounded-lg overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-2 bg-slate-800/50 border-b border-slate-700/30">
+                    <span className="text-slate-400 text-sm font-medium flex items-center space-x-2">
+                      <i className="fas fa-code" />
+                      <span>{language}</span>
+                    </span>
+                    <motion.button
+                      onClick={() => navigator.clipboard.writeText(codeContent)}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="px-2 py-1 text-xs text-slate-400 hover:text-emerald-400 border border-slate-600/40 hover:border-emerald-500/40 rounded transition-all duration-200"
+                    >
+                      <i className="fas fa-copy mr-1" />
+                      Copy
+                    </motion.button>
+                  </div>
+                  <div className="p-0">
+                    {renderCodeWithHighlighting(codeContent, language)}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+          
+          // For other block types, render children
+          if (node.children && Array.isArray(node.children)) {
+            return (
+              <div key={nodeId} className="mb-6">
+                {node.children.map((child, idx) => renderNode(child, idx))}
+              </div>
+            );
+          }
+          
+          return null;
         }
 
         default:

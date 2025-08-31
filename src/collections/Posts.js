@@ -1,4 +1,5 @@
 import { lexicalEditor, FixedToolbarFeature } from '@payloadcms/richtext-lexical'
+import { CodeFeature } from '../features/CodeFeature'
 
 export const Posts = {
   slug: 'posts',
@@ -57,12 +58,11 @@ export const Posts = {
       name: 'details',
       type: 'richText',
       editor: lexicalEditor({
-        features: ({ defaultFeatures }) => [...defaultFeatures, FixedToolbarFeature()],
+        features: ({ defaultFeatures }) => [...defaultFeatures, FixedToolbarFeature(), CodeFeature],
       }),
       required: true,
       admin: {
-        description:
-          'Rich text content for the article with full editing capabilities including formatting, lists, links, images, and more.',
+        description: 'Rich text content (supports formatting, images, and code blocks).',
       },
     },
     {

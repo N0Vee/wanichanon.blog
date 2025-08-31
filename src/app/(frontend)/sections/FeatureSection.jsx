@@ -20,18 +20,23 @@ export default function FeaturedSection() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.1,
+        staggerChildren: 0.2, // เพิ่มเวลาเพื่อให้ side posts เรียงขึ้นมาทีละอัน
       },
     },
   };
 
   const itemVariants = {
-    hidden: { y: 30, opacity: 0 },
-    visible: {
+    hidden: { y: 50, opacity: 0 },
+    visible: (index) => ({
       y: 0,
       opacity: 1,
-    },
+      transition: {
+        delay: index * 0.2, // ใช้ index เพื่อกำหนด delay ของแต่ละ post
+        type: "spring",
+        stiffness: 100,
+        damping: 10,
+      },
+    }),
   };
 
   useEffect(() => {
@@ -92,32 +97,15 @@ export default function FeaturedSection() {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-6">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
-        >
-          {/* Section Header */}
-          <motion.div variants={itemVariants} className="text-center mb-16">
-            <motion.div className="inline-flex items-center glass-card px-4 py-2 rounded-full mb-6 border border-amber-500/20">
-              <i className="fas fa-star text-amber-400 mr-2" />
-              <span className="text-slate-300 text-sm font-medium">
-                Featured Articles
-              </span>
-            </motion.div>
-          </motion.div>
-
+        <div>
           {/* Featured Posts Grid */}
           {featuredPosts.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="mt-20 grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Main Featured Post */}
               <motion.article
-                variants={itemVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.3 }}
-
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
                 className="lg:col-span-2 group cursor-pointer"
               >
                 <Link href={`/post/${featuredPosts[0].id}`}>
@@ -182,12 +170,20 @@ export default function FeaturedSection() {
               </motion.article>
 
               {/* Side Posts */}
-              <motion.div variants={itemVariants} className="space-y-6">
-                {featuredPosts.slice(1).map((post) => (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.3 }}
+                className="space-y-6"
+              >
+                {featuredPosts.slice(1).map((post, index) => (
                   <motion.article
                     key={post.id}
-                    className="glass-card rounded-xl p-6 border border-slate-700/30 hover:border-emerald-500/40 hover:shadow-lg duration-100 cursor-pointer group"
+                    className="glass-card rounded-xl p-6 border border-slate-700/30 hover:border-emerald-500/40 hover:shadow-lg cursor-pointer group"
                     whileHover={{ y: -4 }}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1, type: "spring", stiffness: 100, damping: 10 }} // เพิ่ม delay ให้แต่ละ post ขึ้นมา
                   >
                     <Link href={`/post/${post.id}`}>
                       <div className="flex items-start space-x-4">
@@ -248,7 +244,7 @@ export default function FeaturedSection() {
               </div>
             </motion.div>
           )}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

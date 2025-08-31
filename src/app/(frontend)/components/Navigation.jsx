@@ -12,6 +12,12 @@ export default function Navigation({ active }) {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState(null);
+  const [currentPath, setCurrentPath] = useState("");
+  
+  // Track current path
+  useEffect(() => {
+    setCurrentPath(window.location.pathname);
+  }, []);
   
   const navItems = [
     { id: "featured", href: "#featured", label: "Featured", icon: "fas fa-star" },
@@ -20,6 +26,16 @@ export default function Navigation({ active }) {
   ];
 
   const scrollToSection = useCallback((href) => {
+    // Check if we're on the homepage
+    const isHomePage = window.location.pathname === '/';
+    
+    if (!isHomePage) {
+      // If not on homepage, navigate to homepage with hash
+      window.location.href = `/${href}`;
+      return;
+    }
+    
+    // If on homepage, scroll to section
     const element = document.getElementById(href.substring(1));
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
@@ -38,14 +54,17 @@ export default function Navigation({ active }) {
     setSearchError(null);
     
     try {
-      const response = await fetch(`/api/posts/search?q=${encodeURIComponent(query.trim())}`);
+      const baseUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || window.location.origin;
+      const response = await fetch(`${baseUrl}/api/posts?where[title][like]=${encodeURIComponent(query.trim())}`);
       
       if (!response.ok) {
-        throw new Error('Search failed');
+        throw new Error(`Search failed: ${response.status}`);
       }
       
       const results = await response.json();
-      setSearchResults(results.posts || []);
+      // Handle both Payload API response format and custom API format
+      const posts = results.docs || results.posts || [];
+      setSearchResults(posts);
     } catch (error) {
       console.error('Search error:', error);
       setSearchError('Search unavailable');
@@ -102,7 +121,15 @@ export default function Navigation({ active }) {
         requestAnimationFrame(() => {
           setIsScrolled(window.scrollY > 50);
 
-          // Section detection logic
+          // Only do section detection on homepage
+          const isHomePage = window.location.pathname === '/';
+          if (!isHomePage) {
+            setActiveSection("home"); // Default for non-homepage
+            ticking = false;
+            return;
+          }
+
+          // Section detection logic for homepage
           const sections = navItems.map((item) => item.id);
           const scrollPosition = window.scrollY + 150; // Offset for better detection
 
@@ -165,7 +192,14 @@ export default function Navigation({ active }) {
             className="absolute left-0 text-2xl font-bold"
           >
             <button
-              onClick={() => scrollToSection("#home")}
+              onClick={() => {
+                const isHomePage = window.location.pathname === '/';
+                if (isHomePage) {
+                  scrollToSection("#home");
+                } else {
+                  window.location.href = '/';
+                }
+              }}
               className="text-slate-100 hover:text-amber-400 transition-colors duration-300"
             >
               <span className="text-amber-500 font-semibold">Wanichanon.blog</span>
@@ -174,24 +208,57 @@ export default function Navigation({ active }) {
 
           {/* Desktop Menu - centered */}
           <div className="hidden md:flex items-center space-x-1">
-            {navItems.map((item) => (
-              <motion.button
-                key={item.href}
-                onClick={() => scrollToSection(item.href)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ease-out border-none ${
-                  activeSection === item.id
-                    ? "bg-amber-600/20 text-amber-300 border border-amber-500/40 backdrop-blur-sm"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
-                }`}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <span className="flex items-center space-x-2">
-                  <i className={item.icon} />
-                  <span>{item.label}</span>
-                </span>
-              </motion.button>
-            ))}
+            {currentPath === '/' ? (
+              // Homepage navigation
+              navItems.map((item) => (
+                <motion.button
+                  key={item.href}
+                  onClick={() => scrollToSection(item.href)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ease-out border-none ${
+                    activeSection === item.id
+                      ? "bg-amber-600/20 text-amber-300 border border-amber-500/40 backdrop-blur-sm"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
+                  }`}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <span className="flex items-center space-x-2">
+                    <i className={item.icon} />
+                    <span>{item.label}</span>
+                  </span>
+                </motion.button>
+              ))
+            ) : (
+              // Post page navigation
+              <>
+                <motion.button
+                  onClick={() => window.location.href = '/'}
+                  className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ease-out text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <span className="flex items-center space-x-2">
+                    <i className="fas fa-home" />
+                    <span>Home</span>
+                  </span>
+                </motion.button>
+                
+                {navItems.map((item) => (
+                  <motion.button
+                    key={item.href}
+                    onClick={() => scrollToSection(item.href)}
+                    className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ease-out text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <span className="flex items-center space-x-2">
+                      <i className={item.icon} />
+                      <span>{item.label}</span>
+                    </span>
+                  </motion.button>
+                ))}
+              </>
+            )}
           </div>
 
           {/* Search Input - positioned absolutely to right */}
@@ -459,12 +526,25 @@ export default function Navigation({ active }) {
           className="md:hidden overflow-hidden backdrop-blur-sm bg-slate-900/60 rounded-b-2xl border-b border-slate-700/30"
         >
           <div className="py-4 space-y-2">
+            {/* Show Home button if not on homepage */}
+            {currentPath !== '/' && (
+              <button
+                onClick={() => window.location.href = '/'}
+                className="w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-500 ease-out text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
+              >
+                <span className="flex items-center space-x-3">
+                  <i className="fas fa-home" />
+                  <span>Home</span>
+                </span>
+              </button>
+            )}
+            
             {navItems.map((item) => (
               <button
                 key={item.href}
                 onClick={() => scrollToSection(item.href)}
                 className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-500 ease-out ${
-                  activeSection === item.id
+                  currentPath === '/' && activeSection === item.id
                     ? "bg-amber-600/20 text-amber-300 border border-amber-500/40 backdrop-blur-sm"
                     : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
                 }`}

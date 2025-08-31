@@ -21,17 +21,22 @@ export default function ArticleSection() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
+        staggerChildren: 0.15,
+        delayChildren: 0.3,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { y: 30, opacity: 0 },
     visible: {
       y: 0,
       opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 12,
+      },
     },
   };
 
@@ -110,8 +115,7 @@ export default function ArticleSection() {
         <motion.div
           variants={containerVariants}
           initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
+          animate="visible"
         >
           {/* Section Header */}
           <motion.div variants={itemVariants} className="text-center mb-16">
@@ -143,10 +147,15 @@ export default function ArticleSection() {
           </motion.div>
 
           {/* Articles Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredArticles.map((article) => (
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            variants={containerVariants}
+          >
+            {filteredArticles.map((article, index) => (
               <motion.article
                 key={article.id}
+                variants={itemVariants}
+                custom={index}
                 className="relative z-10 glass-card rounded-2xl overflow-hidden border border-slate-600/30 hover:border-emerald-500/40 hover:shadow-xl duration-100 cursor-pointer group"
                 whileHover={{ y: -4 }}
                 style={{ minHeight: "400px" }}
@@ -234,7 +243,7 @@ export default function ArticleSection() {
                 </Link>
               </motion.article>
             ))}
-          </div>
+          </motion.div>
 
           {/* Empty State */}
           {filteredArticles.length === 0 && (

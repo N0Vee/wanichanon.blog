@@ -9,6 +9,9 @@ export default function Navigation({ active }) {
   const [activeSection, setActiveSection] = useState(active || "home");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState(null);
   
   const navItems = [
     { id: "featured", href: "#featured", label: "Featured", icon: "fas fa-star" },
@@ -23,6 +26,73 @@ export default function Navigation({ active }) {
     }
     setIsMobileMenuOpen(false);
   }, []);
+
+  // Search functionality
+  const searchPosts = useCallback(async (query) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    setSearchError(null);
+    
+    try {
+      const response = await fetch(`/api/posts/search?q=${encodeURIComponent(query.trim())}`);
+      
+      if (!response.ok) {
+        throw new Error('Search failed');
+      }
+      
+      const results = await response.json();
+      setSearchResults(results.posts || []);
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchError('Search unavailable');
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  // Debounced search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery) {
+        searchPosts(searchQuery);
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, searchPosts]);
+
+  // Handle ESC key to close search
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isSearchFocused) {
+        setIsSearchFocused(false);
+        setSearchQuery("");
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSearchFocused]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      searchPosts(searchQuery);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSearchResults([]);
+    setSearchError(null);
+  };
 
   useEffect(() => {
     let ticking = false;
@@ -128,133 +198,235 @@ export default function Navigation({ active }) {
           <div className="absolute right-0 hidden md:flex items-center">
             <motion.div 
               className="relative"
-              initial={{ width: 44 }}
-              animate={{ width: isSearchFocused || searchQuery ? 320 : 44 }}
-              transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+              initial={{ width: 40 }}
+              animate={{ width: isSearchFocused || searchQuery ? 300 : 40 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
             >
-              {/* Search Input Container */}
-              <div className="relative">
-                {/* Search Icon */}
-                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10">
-                  <motion.i 
-                    className={`fas fa-search text-sm transition-all duration-300 ${
-                      isSearchFocused ? 'text-emerald-400' : 'text-slate-400'
-                    }`}
-                    animate={{ 
-                      rotate: isSearchFocused ? 12 : 0,
-                      scale: isSearchFocused ? 1.1 : 1
-                    }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                  />
-                </div>
+              {/* Compact Search Button */}
+              {!isSearchFocused && !searchQuery && (
+                <motion.button
+                  onClick={() => setIsSearchFocused(true)}
+                  className="w-10 h-10 rounded-xl bg-gradient-to-r from-slate-800/60 to-slate-700/60 border border-slate-600/40 hover:border-emerald-500/50 flex items-center justify-center transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/20"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <i className="fas fa-search text-slate-400 text-sm" />
+                </motion.button>
+              )}
 
-                {/* Search Input */}
-                <motion.input
-                  type="text"
-                  placeholder={isSearchFocused || searchQuery ? "Search articles, topics..." : ""}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => setIsSearchFocused(false)}
-                  className={`w-full h-11 pl-10 pr-12 glass-card border rounded-full text-slate-100 placeholder-slate-400 focus:outline-none transition-all duration-400 text-sm ${
-                    isSearchFocused 
-                      ? 'border-emerald-500/60 shadow-lg shadow-emerald-500/20 bg-slate-800/70' 
-                      : 'border-slate-600/40 hover:border-slate-500/60 bg-slate-800/20'
-                  }`}
-                  animate={{
-                    backgroundColor: isSearchFocused || searchQuery 
-                      ? 'rgba(30, 41, 59, 0.7)' 
-                      : 'rgba(30, 41, 59, 0.2)'
-                  }}
-                  transition={{ duration: 0.3 }}
-                />
-
-                {/* Search Actions */}
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
-                  {/* Clear Button */}
-                  {searchQuery && (
-                    <motion.button
-                      onClick={() => setSearchQuery("")}
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all duration-200"
-                      initial={{ opacity: 0, scale: 0.7 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.7 }}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <i className="fas fa-times text-xs" />
-                    </motion.button>
-                  )}
-
-                  {/* Search Button/Shortcut */}
-                  <motion.div
-                    className={`flex items-center transition-all duration-300 ${
-                      isSearchFocused || searchQuery ? 'opacity-100' : 'opacity-0'
-                    }`}
-                  >
-                    <div className="glass px-2 py-1 rounded-md border border-slate-600/30">
-                      <span className="text-xs text-slate-400 font-medium">⏎</span>
+              {/* Expanded Search Input */}
+              {(isSearchFocused || searchQuery) && (
+                <motion.div
+                  className="relative"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <form onSubmit={handleSearchSubmit} className="relative">
+                    <motion.input
+                      type="text"
+                      placeholder="Search articles..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onFocus={() => setIsSearchFocused(true)}
+                      onBlur={() => setTimeout(() => !searchQuery && setIsSearchFocused(false), 150)}
+                      className="w-full h-12 pl-12 pr-12 bg-gradient-to-r from-slate-800/80 to-slate-700/80 border border-slate-600/50 rounded-2xl text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500/70 focus:shadow-lg focus:shadow-emerald-500/25 transition-all duration-300 text-sm backdrop-blur-sm"
+                      autoFocus
+                    />
+                    
+                    {/* Search Icon */}
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+                      <motion.i 
+                        className="fas fa-search text-emerald-400 text-sm"
+                        animate={{ rotate: isSearching ? 180 : 0 }}
+                        transition={{ duration: 0.3 }}
+                      />
                     </div>
-                  </motion.div>
-                </div>
-              </div>
+
+                    {/* Action Buttons */}
+                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
+                      {searchQuery && (
+                        <motion.button
+                          type="button"
+                          onClick={clearSearch}
+                          className="w-8 h-8 rounded-lg bg-slate-700/50 hover:bg-red-500/20 border border-slate-600/30 hover:border-red-500/40 flex items-center justify-center transition-all duration-200"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          <i className="fas fa-times text-xs text-slate-400 hover:text-red-400" />
+                        </motion.button>
+                      )}
+                      
+                      <motion.button
+                        type="submit"
+                        disabled={!searchQuery.trim()}
+                        className={`w-8 h-8 rounded-lg border transition-all duration-200 flex items-center justify-center ${
+                          searchQuery.trim() 
+                            ? 'bg-emerald-500/20 border-emerald-500/40 hover:bg-emerald-500/30 text-emerald-400' 
+                            : 'bg-slate-700/30 border-slate-600/30 text-slate-500 cursor-not-allowed'
+                        }`}
+                        whileHover={searchQuery.trim() ? { scale: 1.1 } : {}}
+                        whileTap={searchQuery.trim() ? { scale: 0.9 } : {}}
+                      >
+                        {isSearching ? (
+                          <i className="fas fa-spinner fa-spin text-xs" />
+                        ) : (
+                          <i className="fas fa-arrow-right text-xs" />
+                        )}
+                      </motion.button>
+                    </div>
+                  </form>
+                </motion.div>
+              )}
 
               {/* Search Results Dropdown */}
               {(isSearchFocused || searchQuery) && (
                 <motion.div
-                  className="absolute top-12 left-0 right-0 glass-card border border-slate-600/40 rounded-2xl shadow-2xl shadow-black/20 overflow-hidden z-50 backdrop-blur-xl"
-                  initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                  className="absolute top-16 right-0 w-80 bg-gradient-to-b from-slate-800/95 to-slate-900/95 border border-slate-600/50 rounded-2xl shadow-2xl shadow-black/40 overflow-hidden z-50 backdrop-blur-xl"
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
                 >
                   {/* Search Header */}
-                  <div className="px-4 py-3 border-b border-slate-700/30">
+                  <div className="px-5 py-4 border-b border-slate-700/50 bg-gradient-to-r from-slate-800/50 to-slate-700/50">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-slate-400 font-medium">Quick Search</span>
-                      <div className="flex items-center space-x-2 text-xs text-slate-500">
-                        <kbd className="px-2 py-1 glass rounded text-xs">ESC</kbd>
-                        <span>to close</span>
+                      <div className="flex items-center space-x-2">
+                        <i className="fas fa-bolt text-emerald-400 text-sm" />
+                        <span className="text-sm text-slate-200 font-medium">Quick Search</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <kbd className="px-2 py-1 bg-slate-700/60 border border-slate-600/40 rounded-lg text-xs text-slate-400">ESC</kbd>
                       </div>
                     </div>
                   </div>
 
                   {/* Search Content */}
-                  <div className="p-4">
+                  <div className="p-5">
                     {searchQuery ? (
-                      <div className="space-y-3">
-                        <div className="text-center text-slate-400 py-6">
-                          <div className="w-12 h-12 mx-auto mb-3 glass-card rounded-full flex items-center justify-center">
-                            <i className="fas fa-search text-emerald-400" />
+                      <div className="space-y-4">
+                        {isSearching ? (
+                          <div className="text-center py-8">
+                            <motion.div 
+                              className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 border border-emerald-500/30 rounded-2xl flex items-center justify-center"
+                              animate={{ scale: [1, 1.05, 1] }}
+                              transition={{ duration: 1.5, repeat: Infinity }}
+                            >
+                              <i className="fas fa-search text-emerald-400 text-lg" />
+                            </motion.div>
+                            <p className="text-sm font-medium text-slate-200 mb-1">Searching...</p>
+                            <p className="text-xs text-slate-400">Finding relevant articles</p>
                           </div>
-                          <p className="text-sm font-medium mb-2">Search for &ldquo;{searchQuery}&rdquo;</p>
-                          <p className="text-xs text-slate-500">
-                            Advanced search functionality is coming soon!
-                          </p>
-                        </div>
+                        ) : searchError ? (
+                          <div className="text-center py-8">
+                            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30 rounded-2xl flex items-center justify-center">
+                              <i className="fas fa-exclamation-triangle text-red-400 text-lg" />
+                            </div>
+                            <p className="text-sm font-medium text-red-400 mb-1">Search Error</p>
+                            <p className="text-xs text-slate-400">{searchError}</p>
+                          </div>
+                        ) : searchResults.length > 0 ? (
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between mb-4">
+                              <p className="text-xs text-slate-400">
+                                {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} found
+                              </p>
+                              <div className="h-px bg-gradient-to-r from-emerald-500/20 to-transparent flex-1 ml-4" />
+                            </div>
+                            
+                            <div className="space-y-2 max-h-72 overflow-y-auto pr-2 custom-scrollbar">
+                              {searchResults.map((post) => (
+                                <motion.a
+                                  key={post.id}
+                                  href={`/post/${post.id}`}
+                                  className="block p-4 bg-gradient-to-r from-slate-800/40 to-slate-700/40 border border-slate-700/50 rounded-xl hover:border-emerald-500/50 transition-all duration-300 group hover:shadow-lg hover:shadow-emerald-500/10"
+                                  whileHover={{ x: 4 }}
+                                  onClick={() => {
+                                    setIsSearchFocused(false);
+                                    setSearchQuery("");
+                                  }}
+                                >
+                                  <div className="flex items-start space-x-4">
+                                    {post.thumbnail?.url && (
+                                      <img 
+                                        src={post.thumbnail.url} 
+                                        alt={post.title}
+                                        className="w-14 h-14 rounded-xl object-cover flex-shrink-0 border border-slate-600/30"
+                                      />
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                      <h4 className="text-sm font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors mb-2 line-clamp-2">
+                                        {post.title}
+                                      </h4>
+                                      {post.excerpt && (
+                                        <p className="text-xs text-slate-400 line-clamp-2 mb-3">
+                                          {post.excerpt}
+                                        </p>
+                                      )}
+                                      <div className="flex items-center space-x-3 text-xs">
+                                        <span className="text-slate-500">
+                                          {new Date(post.date || post.createdAt).toLocaleDateString()}
+                                        </span>
+                                        {post.category && (
+                                          <>
+                                            <div className="w-1 h-1 bg-slate-500 rounded-full" />
+                                            <span className="text-amber-400 font-medium">{post.category}</span>
+                                          </>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <i className="fas fa-arrow-right text-slate-500 group-hover:text-emerald-400 transition-colors text-xs mt-1" />
+                                  </div>
+                                </motion.a>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-center py-8">
+                            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-slate-700/40 to-slate-600/40 border border-slate-600/40 rounded-2xl flex items-center justify-center">
+                              <i className="fas fa-search text-slate-500 text-lg" />
+                            </div>
+                            <p className="text-sm font-medium text-slate-300 mb-1">No results found</p>
+                            <p className="text-xs text-slate-400">Try different keywords or browse categories</p>
+                          </div>
+                        )}
                       </div>
                     ) : (
-                      <div className="space-y-4">
-                        {/* Popular Searches */}
+                      <div className="space-y-5">
+                        {/* Popular Topics */}
                         <div>
-                          <h4 className="text-xs font-medium text-slate-300 mb-3">Popular Topics</h4>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex items-center space-x-2 mb-4">
+                            <i className="fas fa-fire text-orange-400 text-sm" />
+                            <h4 className="text-sm font-medium text-slate-200">Trending Topics</h4>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
                             {['React', 'Next.js', 'TypeScript', 'CSS'].map((topic) => (
-                              <button
+                              <motion.button
                                 key={topic}
-                                className="px-3 py-1 glass rounded-full text-xs text-slate-400 hover:text-emerald-400 hover:border-emerald-500/30 border border-slate-600/30 transition-all duration-200"
+                                onClick={() => setSearchQuery(topic)}
+                                className="p-3 bg-gradient-to-r from-slate-800/60 to-slate-700/60 border border-slate-600/40 rounded-xl text-sm text-slate-300 hover:text-emerald-400 hover:border-emerald-500/40 transition-all duration-200 text-left"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
                               >
-                                {topic}
-                              </button>
+                                <div className="flex items-center space-x-2">
+                                  <i className="fas fa-hashtag text-xs text-slate-500" />
+                                  <span>{topic}</span>
+                                </div>
+                              </motion.button>
                             ))}
                           </div>
                         </div>
 
-                        {/* Quick Actions */}
-                        <div className="pt-3 border-t border-slate-700/30">
-                          <div className="flex items-center text-xs text-slate-500">
-                            <i className="fas fa-lightbulb mr-2" />
-                            <span>Try searching for articles, tutorials, or topics</span>
+                        {/* Quick Tip */}
+                        <div className="pt-4 border-t border-slate-700/50">
+                          <div className="flex items-start space-x-3 p-3 bg-gradient-to-r from-blue-500/10 to-emerald-500/10 border border-blue-500/20 rounded-xl">
+                            <i className="fas fa-lightbulb text-blue-400 text-sm mt-0.5" />
+                            <div>
+                              <p className="text-xs text-slate-300 font-medium mb-1">Pro Tip</p>
+                              <p className="text-xs text-slate-400">Search by title, content, or category to find exactly what you need</p>
+                            </div>
                           </div>
                         </div>
                       </div>

@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import React from "react";
 import { motion } from "framer-motion";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import Image from "next/image";
 import { formatDate } from "@/app/utils/dateUtils";
 import CodeBlock from "../../components/CodeBlock";
@@ -41,48 +39,6 @@ export default function PostContent({ postId }) {
       fetchPost();
     }
   }, [postId]);
-
-  const renderCodeWithHighlighting = (code, language = 'javascript') => {
-    if (!code) return code;
-
-    const languageMap = {
-      js: "javascript",
-      ts: "typescript",
-      jsx: "javascript",
-      tsx: "typescript",
-      py: "python",
-      sh: "bash",
-      shell: "bash",
-      yml: "yaml",
-      md: "markdown",
-    };
-
-    const detectedLanguage = language
-      ? languageMap[language.toLowerCase()] || language.toLowerCase()
-      : "javascript";
-
-    return (
-      <SyntaxHighlighter
-        language={detectedLanguage}
-        style={oneDark}
-        customStyle={{
-          margin: 0,
-          padding: '1rem',
-          background: 'rgba(15, 23, 42, 0.8)',
-          borderRadius: '0.5rem',
-          fontSize: '0.875rem',
-          lineHeight: '1.5',
-        }}
-        codeTagProps={{
-          style: {
-            fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-          },
-        }}
-      >
-        {code}
-      </SyntaxHighlighter>
-    );
-  };
 
   const renderLexicalContent = (content) => {
     if (!content || typeof content !== "object" || !("root" in content)) {
@@ -209,7 +165,7 @@ export default function PostContent({ postId }) {
           // Regular paragraph
           return (
             <p key={nodeId} className="mb-6 text-lg leading-8 text-slate-300">
-              {node.children?.map((child, idx) => renderNode(child, idx))}
+              {node.children?.map((child, idx) => renderNode(child, `${nodeId}-${idx}`))}
             </p>
           );
         }
@@ -235,7 +191,7 @@ export default function PostContent({ postId }) {
               id: id,
               className: `${headingClasses[headingLevel] || headingClasses.h2} scroll-mt-24 hover:text-amber-400 transition-colors duration-300`,
             },
-            node.children?.map((child, idx) => renderNode(child, idx))
+            node.children?.map((child, idx) => renderNode(child, `${nodeId}-${idx}`))
           );
         }
 
@@ -246,26 +202,7 @@ export default function PostContent({ postId }) {
 
           return (
             <div key={nodeId} className="mb-6">
-              <div className="bg-slate-900/90 border border-slate-700/50 rounded-lg overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2 bg-slate-800/50 border-b border-slate-700/30">
-                  <span className="text-slate-400 text-sm font-medium flex items-center space-x-2">
-                    <i className="fas fa-code" />
-                    <span>{language}</span>
-                  </span>
-                  <motion.button
-                    onClick={() => navigator.clipboard.writeText(codeContent)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-2 py-1 text-xs text-slate-400 hover:text-emerald-400 border border-slate-600/40 hover:border-emerald-500/40 rounded transition-all duration-200"
-                  >
-                    <i className="fas fa-copy mr-1" />
-                    Copy
-                  </motion.button>
-                </div>
-                <div className="p-0">
-                  {renderCodeWithHighlighting(codeContent, language)}
-                </div>
-              </div>
+              <CodeBlock language={language} code={codeContent} />
             </div>
           );
         }
@@ -276,13 +213,13 @@ export default function PostContent({ postId }) {
           if (node.format) {
             if (node.format & 1) // Bold
               textElement = <strong key={nodeId} className="font-semibold text-slate-200">{node.text}</strong>;
-            if (node.format & 2) // Italic
+            else if (node.format & 2) // Italic
               textElement = <em key={nodeId} className="italic text-slate-300">{node.text}</em>;
-            if (node.format & 4) // Underline
+            else if (node.format & 4) // Underline
               textElement = <u key={nodeId} className="underline decoration-amber-400/60">{node.text}</u>;
-            if (node.format & 8) // Strikethrough
+            else if (node.format & 8) // Strikethrough
               textElement = <s key={nodeId} className="line-through text-slate-400">{node.text}</s>;
-            if (node.format & 16) // Inline code
+            else if (node.format & 16) // Inline code
               textElement = (
                 <code key={nodeId} className="px-2 py-1 bg-slate-800/60 border border-slate-700/50 rounded-md text-emerald-400 text-sm font-mono mx-1">
                   {node.text}
@@ -309,7 +246,7 @@ export default function PostContent({ postId }) {
               key: nodeId,
               className: `${baseClasses} ${listTypeClasses}`,
             },
-            node.children?.map((child, idx) => renderNode(child, idx))
+            node.children?.map((child, idx) => renderNode(child, `${nodeId}-${idx}`))
           );
         }
 
@@ -317,7 +254,7 @@ export default function PostContent({ postId }) {
           return (
             <li key={nodeId} className="text-lg text-slate-300 leading-relaxed mb-2 pl-2">
               <div className="inline-block">
-                {node.children?.map((child, idx) => renderNode(child, idx))}
+                {node.children?.map((child, idx) => renderNode(child, `${nodeId}-${idx}`))}
               </div>
             </li>
           );
@@ -325,33 +262,13 @@ export default function PostContent({ postId }) {
 
         case "block": {
           // Handle Lexical blocks (including our custom CodeBlock)
-          // Check both locations for blockType
-          if (node.fields?.blockType === "codeBlock" || node.blockType === "codeBlock" || node.format === "codeBlock") {
+          if (node.fields?.blockType === "codeBlock") {
             const codeContent = node.fields?.code || "";
             const language = node.fields?.language || "javascript";
             
             return (
               <div key={nodeId} className="mb-6">
-                <div className="bg-slate-900/90 border border-slate-700/50 rounded-lg overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-2 bg-slate-800/50 border-b border-slate-700/30">
-                    <span className="text-slate-400 text-sm font-medium flex items-center space-x-2">
-                      <i className="fas fa-code" />
-                      <span>{language}</span>
-                    </span>
-                    <motion.button
-                      onClick={() => navigator.clipboard.writeText(codeContent)}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="px-2 py-1 text-xs text-slate-400 hover:text-emerald-400 border border-slate-600/40 hover:border-emerald-500/40 rounded transition-all duration-200"
-                    >
-                      <i className="fas fa-copy mr-1" />
-                      Copy
-                    </motion.button>
-                  </div>
-                  <div className="p-0">
-                    {renderCodeWithHighlighting(codeContent, language)}
-                  </div>
-                </div>
+                <CodeBlock language={language} code={codeContent} />
               </div>
             );
           }
@@ -360,7 +277,7 @@ export default function PostContent({ postId }) {
           if (node.children && Array.isArray(node.children)) {
             return (
               <div key={nodeId} className="mb-6">
-                {node.children.map((child, idx) => renderNode(child, idx))}
+                {node.children.map((child, idx) => renderNode(child, `${nodeId}-${idx}`))}
               </div>
             );
           }
@@ -371,7 +288,11 @@ export default function PostContent({ postId }) {
         default:
           // Handle unknown node types by rendering children
           if (node.children && Array.isArray(node.children)) {
-            return node.children.map((child, idx) => renderNode(child, idx));
+            return (
+              <div key={nodeId}>
+                {node.children.map((child, idx) => renderNode(child, `${nodeId}-child-${idx}`))}
+              </div>
+            );
           }
           return null;
       }
@@ -446,15 +367,16 @@ export default function PostContent({ postId }) {
       }
     };
 
-    const renderHeadingItem = (heading, isNested = false) => {
+    const renderHeadingItem = (heading, isNested = false, nestingLevel = 0) => {
       const isActive = activeHeading === heading.id;
       const hasChildren = heading.children && heading.children.length > 0;
+      const uniqueKey = `${heading.id}-${nestingLevel}`;
 
       return (
-        <li key={heading.id} className={`${isNested ? 'ml-4' : ''}`}>
+        <li key={uniqueKey} className={`${isNested ? 'ml-3' : ''}`}>
           <button
             onClick={() => scrollToHeading(heading.id)}
-            className={`text-left w-full text-sm py-2 px-3 rounded-lg transition-all duration-200 flex items-start space-x-2 group
+            className={`text-left w-full text-xs py-1.5 px-2 rounded-md transition-all duration-200 flex items-start space-x-2 group
               ${isActive 
                 ? 'bg-amber-500/20 text-amber-400 border-l-2 border-amber-400' 
                 : 'text-slate-400 hover:text-slate-300 hover:bg-slate-800/50'
@@ -465,19 +387,21 @@ export default function PostContent({ postId }) {
             <span className={`flex-shrink-0 mt-0.5 text-xs opacity-60 group-hover:opacity-80 ${isActive ? 'opacity-100' : ''}`}>
               {heading.level === 2 ? '▪' : heading.level === 3 ? '▸' : '·'}
             </span>
-            <span className="flex-1 leading-relaxed">{heading.text}</span>
+            <span className="flex-1 leading-tight text-xs">{heading.text}</span>
             {isActive && (
               <motion.span
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="flex-shrink-0 w-2 h-2 bg-amber-400 rounded-full mt-1"
+                className="flex-shrink-0 w-1.5 h-1.5 bg-amber-400 rounded-full mt-1"
               />
             )}
           </button>
           
           {hasChildren && (
-            <ul className="mt-1 space-y-1 border-l border-slate-700/30 ml-5 pl-2">
-              {heading.children.map((child) => renderHeadingItem(child, true))}
+            <ul className="mt-0.5 space-y-0.5 border-l border-slate-700/30 ml-3 pl-2">
+              {heading.children.map((child, childIndex) => 
+                renderHeadingItem(child, true, nestingLevel + 1 + childIndex)
+              )}
             </ul>
           )}
         </li>
@@ -488,26 +412,26 @@ export default function PostContent({ postId }) {
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
-        className="sticky top-24"
+        className="lg:sticky lg:top-20"
       >
-        <div className="glass-card p-6 rounded-xl border border-slate-700/30 max-h-[calc(100vh-8rem)] overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-slate-200 flex items-center space-x-2">
-              <i className="fas fa-list-ul text-amber-400" />
-              <span>Table of Contents</span>
+        <div className="glass-card p-4 rounded-lg border border-slate-700/30 max-h-[calc(100vh-6rem)] overflow-hidden">
+          {/* Compact Header */}
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-slate-200 flex items-center space-x-2">
+              <i className="fas fa-list-ul text-amber-400 text-xs" />
+              <span>Contents</span>
             </h3>
             <motion.button
               onClick={() => setIsCollapsed(!isCollapsed)}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
-              className="p-2 text-slate-400 hover:text-slate-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200"
+              className="p-1.5 text-slate-400 hover:text-slate-300 hover:bg-slate-800/50 rounded-md transition-all duration-200"
               aria-label={isCollapsed ? "Expand" : "Collapse"}
             >
               <motion.i
                 animate={{ rotate: isCollapsed ? 180 : 0 }}
                 transition={{ duration: 0.2 }}
-                className="fas fa-chevron-up text-sm"
+                className="fas fa-chevron-up text-xs"
               />
             </motion.button>
           </div>
@@ -522,29 +446,28 @@ export default function PostContent({ postId }) {
             transition={{ duration: 0.3 }}
             className="overflow-hidden"
           >
-            <div className="max-h-96 overflow-y-auto custom-scrollbar">
+            <div className="max-h-80 overflow-y-auto custom-scrollbar">
               <nav>
-                <ul className="space-y-1">
-                  {organizedHeadings.map((heading) => renderHeadingItem(heading))}
+                <ul className="space-y-0.5">
+                  {organizedHeadings.map((heading, index) => renderHeadingItem(heading, false, index))}
                 </ul>
               </nav>
             </div>
           </motion.div>
 
-          {/* Footer info */}
+          {/* Compact Footer */}
           {!isCollapsed && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="mt-4 pt-4 border-t border-slate-700/30"
+              className="mt-3 pt-3 border-t border-slate-700/30"
             >
-              <div className="flex items-center justify-between text-xs text-slate-500">
-                <span className="flex items-center space-x-1">
+              <div className="text-xs text-slate-500 text-center">
+                <span className="flex items-center justify-center space-x-1">
                   <i className="fas fa-bookmark" />
                   <span>{headings.length} sections</span>
                 </span>
-                
               </div>
             </motion.div>
           )}
@@ -708,100 +631,108 @@ export default function PostContent({ postId }) {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="pt-20 min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900"
+      className="pt-16 min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900"
     >
-      {/* Hero Section */}
-      <motion.section variants={itemVariants} className="relative py-20 overflow-hidden">
+      {/* Compact Hero Section */}
+      <motion.section variants={itemVariants} className="relative py-12 overflow-hidden">
         {/* Background decorations */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-20 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl" />
-          <div className="absolute top-20 -left-20 w-60 h-60 bg-emerald-500/10 rounded-full blur-3xl" />
+          <div className="absolute -top-20 -right-20 w-60 h-60 bg-amber-500/8 rounded-full blur-3xl" />
+          <div className="absolute top-10 -left-20 w-40 h-40 bg-emerald-500/8 rounded-full blur-3xl" />
         </div>
 
-        <div className="relative z-10 max-w-4xl mx-auto px-6">
-          <motion.div variants={itemVariants} className="text-center mb-12">
-            {/* Category & Read Time */}
-            <div className="flex items-center justify-center space-x-4 mb-6">
-              <motion.span
-                whileHover={{ scale: 1.05 }}
-                className="px-4 py-2 glass-card border border-amber-500/30 rounded-full text-amber-400 text-sm font-medium"
-              >
-                {post.category || 'Article'}
-              </motion.span>
-              <span className="text-slate-400 text-sm flex items-center space-x-2">
-                <i className="fas fa-clock" />
-                <span>{post.readTime || '5 min read'}</span>
-              </span>
+        <div className="relative z-10 max-w-6xl mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+            
+            {/* Content Column */}
+            <div className="lg:col-span-2 order-2 lg:order-1">
+              <motion.div variants={itemVariants} className="text-left">
+                {/* Category & Meta Info */}
+                <div className="flex items-center space-x-4 mb-4">
+                  <motion.span
+                    whileHover={{ scale: 1.05 }}
+                    className="px-3 py-1 glass-card border border-amber-500/30 rounded-full text-amber-400 text-xs font-medium"
+                  >
+                    {post.category || 'Article'}
+                  </motion.span>
+                  <span className="text-slate-400 text-xs flex items-center space-x-2">
+                    <i className="fas fa-clock" />
+                    <span>{post.readTime || '5 min read'}</span>
+                  </span>
+                  <span className="text-slate-400 text-xs flex items-center space-x-2">
+                    <i className="fas fa-calendar" />
+                    <span>{post.date ? formatDate(post.date) : 'Today'}</span>
+                  </span>
+                </div>
+
+                {/* Title */}
+                <motion.h1
+                  variants={itemVariants}
+                  className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-100 mb-4 leading-tight"
+                >
+                  {post.title}
+                </motion.h1>
+
+                {/* Excerpt */}
+                <motion.p
+                  variants={itemVariants}
+                  className="text-lg text-slate-300 leading-relaxed mb-4"
+                >
+                  {post.excerpt || 'Welcome to this article.'}
+                </motion.p>
+
+                {/* Author Info */}
+                <motion.div
+                  variants={itemVariants}
+                  className="flex items-center space-x-4 text-slate-400 text-sm"
+                >
+                  {author && (
+                    <div className="flex items-center space-x-2">
+                      <i className="fas fa-user" />
+                      <span>By {author.email || author.name || 'Wanichanon'}</span>
+                    </div>
+                  )}
+                </motion.div>
+              </motion.div>
             </div>
 
-            {/* Title */}
-            <motion.h1
-              variants={itemVariants}
-              className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-100 mb-6 leading-tight"
-            >
-              {post.title}
-            </motion.h1>
-
-            {/* Excerpt */}
-            <motion.p
-              variants={itemVariants}
-              className="text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed mb-8"
-            >
-              {post.excerpt || 'Welcome to this article.'}
-            </motion.p>
-
-            {/* Meta Info */}
-            <motion.div
-              variants={itemVariants}
-              className="flex items-center justify-center space-x-6 text-slate-400 text-sm"
-            >
-              {author && (
-                <div className="flex items-center space-x-2">
-                  <i className="fas fa-user" />
-                  <span>By {author.email || author.name || 'Wanichanon'}</span>
-                </div>
-              )}
-              <div className="flex items-center space-x-2">
-                <i className="fas fa-calendar" />
-                <span>{post.date ? formatDate(post.date) : 'Today'}</span>
-              </div>
-            </motion.div>
-          </motion.div>
-
-          {/* Featured Image */}
-          <motion.div
-            variants={itemVariants}
-            className="relative rounded-2xl overflow-hidden glass-card border border-slate-700/30 shadow-2xl"
-          >
-            <Image
-              src={thumbnailUrl}
-              alt={post.title}
-              width={800}
-              height={400}
-              className="w-full h-96 object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 to-transparent" />
-          </motion.div>
+            {/* Compact Featured Image */}
+            <div className="lg:col-span-1 order-1 lg:order-2">
+              <motion.div
+                variants={itemVariants}
+                className="relative rounded-xl overflow-hidden glass-card border border-slate-700/30 shadow-xl"
+              >
+                <Image
+                  src={thumbnailUrl}
+                  alt={post.title}
+                  width={400}
+                  height={240}
+                  className="w-full h-48 object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 to-transparent" />
+              </motion.div>
+            </div>
+          </div>
         </div>
       </motion.section>
 
-      {/* Content Section */}
-      <motion.section variants={itemVariants} className="py-20">
+      {/* Content Section - Immediate Focus */}
+      <motion.section variants={itemVariants} className="py-8">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Table of Contents - Left Sidebar */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+            {/* Table of Contents - Compact Sidebar */}
             <div className="lg:col-span-1 order-2 lg:order-1">
-              <TableOfContents headings={headings} />
+              <div className="lg:sticky lg:top-20">
+                <TableOfContents headings={headings} />
+              </div>
             </div>
 
-            {/* Main Content */}
-            <div className="lg:col-span-3 order-1 lg:order-2">
+            {/* Main Content - More Space */}
+            <div className="lg:col-span-4 order-1 lg:order-2">
               <motion.div
                 variants={itemVariants}
-                className="glass-card border border-slate-700/30 rounded-2xl p-8 md:p-12"
+                className="glass-card border border-slate-700/30 rounded-2xl p-6 md:p-8 lg:p-10"
               >
-                
-
                 {/* Article Content */}
                 <motion.div variants={itemVariants}>
                   {post.details ? (
@@ -814,28 +745,27 @@ export default function PostContent({ postId }) {
                     </div>
                   )}
                 </motion.div>
-
               </motion.div>
             </div>
           </div>
         </div>
       </motion.section>
 
-      {/* Back to Articles */}
-      <motion.section variants={itemVariants} className="pb-20">
+      {/* Compact Back to Articles */}
+      <motion.section variants={itemVariants} className="py-8 border-t border-slate-700/30">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.3 }}
           >
             <motion.a
               href="/#articles"
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              className="inline-flex items-center space-x-3 glass-card border border-amber-500/40 hover:border-amber-400/60 text-amber-400 hover:text-amber-300 px-8 py-4 rounded-full font-semibold transition-all duration-300 text-lg shadow-lg hover:shadow-amber-500/20"
+              whileHover={{ scale: 1.02, y: -1 }}
+              whileTap={{ scale: 0.98 }}
+              className="inline-flex items-center space-x-2 glass-card border border-amber-500/40 hover:border-amber-400/60 text-amber-400 hover:text-amber-300 px-6 py-3 rounded-lg font-medium transition-all duration-300 text-sm shadow-md hover:shadow-amber-500/20"
             >
-              <i className="fas fa-arrow-left text-lg" />
+              <i className="fas fa-arrow-left text-sm" />
               <span>Back to Articles</span>
             </motion.a>
           </motion.div>

@@ -1,6 +1,4 @@
 import { getPayload } from "payload";
-import React from "react";
-import { fileURLToPath } from "url";
 
 import config from "@/payload.config";
 
@@ -49,7 +47,6 @@ export async function generateMetadata({ params }) {
 
 export default async function PostPage({ params }) {
   const resolvedParams = await params;
-  const _fileURL = `vscode://file/${fileURLToPath(import.meta.url)}`;
 
   return (
     <>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import React from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -12,6 +12,7 @@ export default function PostContent({ postId }) {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const fetchedForIdRef = useRef(new Set());
 
   useEffect(() => {
     setMounted(true);
@@ -19,26 +20,29 @@ export default function PostContent({ postId }) {
 
   useEffect(() => {
     const fetchPost = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`/api/posts/${postId}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch post");
-        }
-        const data = await response.json();
-        setPost(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+      setLoading(true)
+      setError(null)
 
-    if (postId) {
-      fetchPost();
+      try {
+        // ดึงจาก cache route เท่านั้น ให้ route จัดการ fallback เอง
+        const res = await fetch(`/api/cache/post/${postId}`)
+        if (!res.ok) throw new Error(`Failed to fetch post (${res.status})`)
+        const data = await res.json()
+        setPost(data)
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [postId]);
+
+    if (!postId) return
+    // ป้องกันการ fetch ซ้ำใน dev ที่ Strict Mode เรียก effect ซ้ำ
+    if (fetchedForIdRef.current.has(postId)) return
+    fetchedForIdRef.current.add(postId)
+    fetchPost()
+  }, [postId])
+
 
   const renderLexicalContent = (content) => {
     if (!content || typeof content !== "object" || !("root" in content)) {

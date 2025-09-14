@@ -48,23 +48,31 @@ export default function ArticleSection() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const baseUrl =
-          process.env.NEXT_PUBLIC_WEBSITE_URL || window.location.origin;
-        const res = await fetch(`${baseUrl}/api/posts`);
 
-        if (!res.ok) {
-          console.error("Failed to fetch posts:", res.status);
-          return;
+        // ใช้ same origin API route
+        const res = await fetch("/api/cache/posts");
+        let posts = [];
+
+        if (res.ok) {
+          const data = await res.json();
+          posts = data.posts; // ตาม JSON response จาก API
+        } else {
+          // Fallback: call main API silently
+          const fallbackRes = await fetch("/api/posts?limit=20&sort=-date");
+          if (fallbackRes.ok) {
+            const fallbackData = await fallbackRes.json();
+            posts = fallbackData.docs;
+          }
         }
 
-        const data = await res.json();
-        setArticles(data.docs);
+        setArticles(posts);
       } catch (error) {
         console.error("Error fetching posts:", error);
       } finally {
         setIsLoading(false);
       }
     };
+
 
     fetchData();
   }, []);
@@ -136,7 +144,7 @@ export default function ArticleSection() {
       <div className="p-6 space-y-4">
         {/* Meta Info Skeleton */}
         <div className="flex items-center space-x-3">
-          <motion.div 
+          <motion.div
             className="flex items-center space-x-1"
             animate={{ opacity: [0.6, 1, 0.6] }}
             transition={{ duration: 1.5, repeat: Infinity }}
@@ -145,7 +153,7 @@ export default function ArticleSection() {
             <div className="w-16 h-3 bg-slate-600/50 rounded" />
           </motion.div>
           <div className="w-1 h-1 bg-slate-600/50 rounded-full" />
-          <motion.div 
+          <motion.div
             className="flex items-center space-x-1"
             animate={{ opacity: [0.6, 1, 0.6] }}
             transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
@@ -154,7 +162,7 @@ export default function ArticleSection() {
             <div className="w-12 h-3 bg-slate-600/50 rounded" />
           </motion.div>
           <div className="w-1 h-1 bg-slate-600/50 rounded-full" />
-          <motion.div 
+          <motion.div
             className="w-16 h-3 bg-slate-600/50 rounded"
             animate={{ opacity: [0.6, 1, 0.6] }}
             transition={{ duration: 1.5, repeat: Infinity, delay: 0.4 }}
@@ -163,12 +171,12 @@ export default function ArticleSection() {
 
         {/* Title Skeleton */}
         <div className="space-y-2">
-          <motion.div 
+          <motion.div
             className="w-full h-6 bg-slate-600/50 rounded"
             animate={{ opacity: [0.7, 1, 0.7] }}
             transition={{ duration: 1.8, repeat: Infinity }}
           />
-          <motion.div 
+          <motion.div
             className="w-4/5 h-6 bg-slate-600/50 rounded"
             animate={{ opacity: [0.7, 1, 0.7] }}
             transition={{ duration: 1.8, repeat: Infinity, delay: 0.1 }}
@@ -177,17 +185,17 @@ export default function ArticleSection() {
 
         {/* Excerpt Skeleton */}
         <div className="space-y-2">
-          <motion.div 
+          <motion.div
             className="w-full h-4 bg-slate-600/40 rounded"
             animate={{ opacity: [0.5, 0.8, 0.5] }}
             transition={{ duration: 2, repeat: Infinity }}
           />
-          <motion.div 
+          <motion.div
             className="w-full h-4 bg-slate-600/40 rounded"
             animate={{ opacity: [0.5, 0.8, 0.5] }}
             transition={{ duration: 2, repeat: Infinity, delay: 0.1 }}
           />
-          <motion.div 
+          <motion.div
             className="w-2/3 h-4 bg-slate-600/40 rounded"
             animate={{ opacity: [0.5, 0.8, 0.5] }}
             transition={{ duration: 2, repeat: Infinity, delay: 0.2 }}
@@ -201,19 +209,19 @@ export default function ArticleSection() {
               key={index}
               className="w-12 h-6 bg-slate-600/40 rounded"
               animate={{ opacity: [0.4, 0.7, 0.4] }}
-              transition={{ 
-                duration: 1.5, 
-                repeat: Infinity, 
-                delay: index * 0.1 
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                delay: index * 0.1
               }}
             />
           ))}
         </div>
 
         {/* Button Skeleton */}
-        <motion.div 
+        <motion.div
           className="w-24 h-6 bg-slate-600/50 rounded"
-          animate={{ 
+          animate={{
             opacity: [0.6, 1, 0.6],
             scale: [1, 1.02, 1]
           }}
@@ -275,7 +283,7 @@ export default function ArticleSection() {
 
             {/* Category Filter */}
             {!isLoading && (
-              <motion.div 
+              <motion.div
                 className="flex flex-wrap justify-center gap-3"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -285,11 +293,10 @@ export default function ArticleSection() {
                   <motion.button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                      selectedCategory === category
-                        ? "glass-card border border-amber-500/40 text-amber-300 bg-amber-500/10"
-                        : "glass border border-slate-600/30 text-slate-400 hover:text-slate-300 hover:border-slate-500/40"
-                    }`}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${selectedCategory === category
+                      ? "glass-card border border-amber-500/40 text-amber-300 bg-amber-500/10"
+                      : "glass border border-slate-600/30 text-slate-400 hover:text-slate-300 hover:border-slate-500/40"
+                      }`}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     initial={{ opacity: 0, y: 10 }}
@@ -308,21 +315,21 @@ export default function ArticleSection() {
             // Loading Skeleton
             <div className="space-y-8">
               {/* Loading Header */}
-              <motion.div 
+              <motion.div
                 className="text-center"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <motion.div 
+                <motion.div
                   className="inline-flex items-center space-x-2 glass-card px-4 py-2 rounded-full border border-emerald-500/30"
-                  animate={{ 
+                  animate={{
                     scale: [1, 1.02, 1],
                     borderColor: ["rgba(16, 185, 129, 0.3)", "rgba(16, 185, 129, 0.6)", "rgba(16, 185, 129, 0.3)"]
                   }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  <motion.i 
+                  <motion.i
                     className="fas fa-spinner text-emerald-400 text-sm"
                     animate={{ rotate: 360 }}
                     transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
@@ -334,7 +341,7 @@ export default function ArticleSection() {
               </motion.div>
 
               {/* Skeleton Grid */}
-              <motion.div 
+              <motion.div
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -345,8 +352,8 @@ export default function ArticleSection() {
                     key={`skeleton-${index}`}
                     initial={{ opacity: 0, y: 30, scale: 0.9 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ 
-                      duration: 0.5, 
+                    transition={{
+                      duration: 0.5,
                       delay: index * 0.1 + 0.3,
                       type: "spring",
                       stiffness: 100,
@@ -359,13 +366,13 @@ export default function ArticleSection() {
               </motion.div>
 
               {/* Loading Footer */}
-              <motion.div 
+              <motion.div
                 className="text-center mt-8"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 1 }}
               >
-                <motion.p 
+                <motion.p
                   className="text-slate-400 text-sm"
                   animate={{ opacity: [0.5, 1, 0.5] }}
                   transition={{ duration: 2, repeat: Infinity }}
@@ -376,7 +383,7 @@ export default function ArticleSection() {
             </div>
           ) : (
             <AnimatePresence mode="wait">
-              <motion.div 
+              <motion.div
                 key={selectedCategory}
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                 variants={containerVariants}
@@ -387,98 +394,98 @@ export default function ArticleSection() {
                 transition={{ duration: 0.3 }}
               >
                 {filteredArticles.map((article, index) => (
-                <motion.article
-                  key={`${article.id}-${selectedCategory}`}
-                  variants={itemVariants}
-                  custom={index}
-                  className="relative z-10 glass-card rounded-2xl overflow-hidden border border-slate-600/30 hover:border-emerald-500/40 hover:shadow-xl duration-100 cursor-pointer group"
-                  whileHover={{ y: -4 }}
-                  style={{ minHeight: "400px" }}
-                  layout
-                >
-                  <Link href={`/post/${article.id}`}>
-                    {/* Article Image Placeholder */}
-                    <div className="relative h-48 bg-gradient-to-br from-emerald-500/20 to-amber-500/20 overflow-hidden">
-                      {article.thumbnail?.url ? (
-                        <Image
-                          src={article.thumbnail.url}
-                          alt={article.title}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-4xl text-emerald-400/60">
-                            <i className="fas fa-image" />
+                  <motion.article
+                    key={`${article.id}-${selectedCategory}`}
+                    variants={itemVariants}
+                    custom={index}
+                    className="relative z-10 glass-card rounded-2xl overflow-hidden border border-slate-600/30 hover:border-emerald-500/40 hover:shadow-xl duration-100 cursor-pointer group"
+                    whileHover={{ y: -4 }}
+                    style={{ minHeight: "400px" }}
+                    layout
+                  >
+                    <Link href={`/post/${article.id}`}>
+                      {/* Article Image Placeholder */}
+                      <div className="relative h-48 bg-gradient-to-br from-emerald-500/20 to-amber-500/20 overflow-hidden">
+                        {article.thumbnail?.url ? (
+                          <Image
+                            src={article.thumbnail.url}
+                            alt={article.title}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="text-4xl text-emerald-400/60">
+                              <i className="fas fa-image" />
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
-                      {/* Featured badge */}
-                      {article.featured && (
-                        <div className="absolute top-4 left-4">
-                          <span className="glass px-3 py-1 rounded-full text-xs font-medium text-amber-300 border border-amber-500/30">
-                            Featured
+                        {/* Featured badge */}
+                        {article.featured && (
+                          <div className="absolute top-4 left-4">
+                            <span className="glass px-3 py-1 rounded-full text-xs font-medium text-amber-300 border border-amber-500/30">
+                              Featured
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Category badge */}
+                        <div className="absolute top-4 right-4">
+                          <span className="glass px-3 py-1 rounded-full text-xs font-medium text-emerald-300 border border-emerald-500/30">
+                            {article.category}
                           </span>
                         </div>
-                      )}
-
-                      {/* Category badge */}
-                      <div className="absolute top-4 right-4">
-                        <span className="glass px-3 py-1 rounded-full text-xs font-medium text-emerald-300 border border-emerald-500/30">
-                          {article.category}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Article Content */}
-                    <div className="p-6">
-                      <div className="flex items-center space-x-4 mb-4 text-xs text-slate-500">
-                        <span className="flex items-center space-x-1">
-                          <i className="fas fa-user" />
-                          <span>{getAuthorName(article.author)}</span>
-                        </span>
-                        <span>•</span>
-                        <span className="flex items-center space-x-1">
-                          <i className="fas fa-clock" />
-                          <span>{article.readTime}</span>
-                        </span>
-                        <span>•</span>
-                        <span>{formatDate(article.date)}</span>
                       </div>
 
-                      <h3 className="text-xl font-bold text-slate-100 mb-3 line-clamp-2 group-hover:text-emerald-300 transition-colors duration-300">
-                        {article.title}
-                      </h3>
-
-                      <p className="text-slate-400 text-sm leading-relaxed mb-4 line-clamp-3">
-                        {article.excerpt}
-                      </p>
-
-                      {/* Tags */}
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {article.tags.slice(0, 3).map((tagItem, index) => (
-                          <span
-                            key={`${article.id}-tag-${index}`}
-                            className="px-2 py-1 rounded-md text-xs text-slate-400 bg-slate-800/50 border border-slate-700/30"
-                          >
-                            #{tagItem.tag || "tag"}
+                      {/* Article Content */}
+                      <div className="p-6">
+                        <div className="flex items-center space-x-4 mb-4 text-xs text-slate-500">
+                          <span className="flex items-center space-x-1">
+                            <i className="fas fa-user" />
+                            <span>{getAuthorName(article.author)}</span>
                           </span>
-                        ))}
-                      </div>
+                          <span>•</span>
+                          <span className="flex items-center space-x-1">
+                            <i className="fas fa-clock" />
+                            <span>{article.readTime}</span>
+                          </span>
+                          <span>•</span>
+                          <span>{formatDate(article.date)}</span>
+                        </div>
 
-                      {/* Read More Button */}
-                      <motion.button
-                        className="inline-flex items-center space-x-2 text-emerald-400 hover:text-emerald-300 font-medium text-sm transition-colors duration-300"
-                        whileHover={{ x: 3 }}
-                      >
-                        <span>Read Article</span>
-                        <i className="fas fa-arrow-right" />
-                      </motion.button>
-                    </div>
-                  </Link>
-                </motion.article>
-              ))}
+                        <h3 className="text-xl font-bold text-slate-100 mb-3 line-clamp-2 group-hover:text-emerald-300 transition-colors duration-300">
+                          {article.title}
+                        </h3>
+
+                        <p className="text-slate-400 text-sm leading-relaxed mb-4 line-clamp-3">
+                          {article.excerpt}
+                        </p>
+
+                        {/* Tags */}
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {article.tags.slice(0, 3).map((tagItem, index) => (
+                            <span
+                              key={`${article.id}-tag-${index}`}
+                              className="px-2 py-1 rounded-md text-xs text-slate-400 bg-slate-800/50 border border-slate-700/30"
+                            >
+                              #{tagItem.tag || "tag"}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Read More Button */}
+                        <motion.button
+                          className="inline-flex items-center space-x-2 text-emerald-400 hover:text-emerald-300 font-medium text-sm transition-colors duration-300"
+                          whileHover={{ x: 3 }}
+                        >
+                          <span>Read Article</span>
+                          <i className="fas fa-arrow-right" />
+                        </motion.button>
+                      </div>
+                    </Link>
+                  </motion.article>
+                ))}
               </motion.div>
             </AnimatePresence>
           )}

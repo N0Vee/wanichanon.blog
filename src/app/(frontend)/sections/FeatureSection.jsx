@@ -47,32 +47,34 @@ export default function FeaturedSection() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const baseUrl =
-          process.env.NEXT_PUBLIC_WEBSITE_URL || window.location.origin;
-        const res = await fetch(
-          `${baseUrl}/api/posts?where[featured][equals]=true`
-        );
 
-        if (!res.ok) {
-          console.error("Failed to fetch posts:", res.status);
-          return;
+        // fetch จาก cache route
+        const res = await fetch('/api/cache/posts?featured=true');
+        let posts = [];
+
+        if (res.ok) {
+          const data = await res.json();
+          posts = data.posts;
+        } else {
+          // Fallback: call main API silently
+          const fallbackRes = await fetch('/api/posts?where[featured][equals]=true');
+          if (fallbackRes.ok) {
+            const fallbackData = await fallbackRes.json();
+            posts = fallbackData.docs;
+          }
         }
 
-        const data = await res.json();
-        // Filter for featured posts as backup (in case API filter doesn't work)
-        const featured = data.docs.filter((post) => post.featured === true);
+        // ถ้ายังไม่เจอ featured posts → take first 3 posts
+        const finalFeatured = posts.length > 0 ? posts : [];
 
-        // If no featured posts found, take first 3 posts as featured
-        const finalFeatured =
-          featured.length > 0 ? featured : data.docs.slice(0, 3);
-
-        setFeaturedPosts(finalFeatured);
+        setFeaturedPosts(finalFeatured.slice(0, 3));
       } catch (error) {
-        console.error("Error fetching posts:", error);
+        console.error('Error fetching posts:', error);
       } finally {
         setIsLoading(false);
       }
     };
+
 
     fetchData();
   }, []);
@@ -82,9 +84,8 @@ export default function FeaturedSection() {
   // Skeleton Loading Components
   const SkeletonCard = ({ isMain = false }) => (
     <motion.div
-      className={`glass-card rounded-2xl overflow-hidden border border-slate-700/30 ${
-        isMain ? "lg:col-span-2" : ""
-      }`}
+      className={`glass-card rounded-2xl overflow-hidden border border-slate-700/30 ${isMain ? "lg:col-span-2" : ""
+        }`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -203,7 +204,7 @@ export default function FeaturedSection() {
           {/* Featured Posts Grid */}
           {isLoading ? (
             // Loading Skeleton
-            <motion.div 
+            <motion.div
               className="mt-20 grid grid-cols-1 lg:grid-cols-3 gap-8"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -211,9 +212,9 @@ export default function FeaturedSection() {
             >
               {/* Main Featured Post Skeleton */}
               <SkeletonCard isMain={true} />
-              
+
               {/* Side Posts Skeleton */}
-              <motion.div 
+              <motion.div
                 className="space-y-6"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -354,9 +355,9 @@ export default function FeaturedSection() {
                 ))}
               </motion.div>
             </div>
-            ) : (
+          ) : (
             // Empty State
-            <motion.div 
+            <motion.div
               className="text-center py-20"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

@@ -248,10 +248,13 @@ export default function FeaturedSection() {
                 variants={itemVariants}
                 className="space-y-6"
               >
-                {featuredPosts.slice(1).map((post, index) => (
-                  <article
+                {featuredPosts.slice(0).map((post, index) => (
+                  <motion.article
                     key={post.id}
-                    className="glass-card rounded-xl p-6 border border-slate-700/30 hover:border-emerald-500/40 hover:shadow-lg cursor-pointer group"
+                    className="glass-card rounded-xl p-4 border border-slate-700/30 hover:border-emerald-500/40 hover:shadow-lg cursor-pointer group"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.3 }}
                   >
                     <Link href={`/post/${post.id}`}>
                       <div className="flex items-start space-x-4">
@@ -288,7 +291,7 @@ export default function FeaturedSection() {
                         </div>
                       </div>
                     </Link>
-                  </article>
+                  </motion.article>
                 ))}
               </motion.div>
             </motion.div>

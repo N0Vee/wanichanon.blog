@@ -275,10 +275,13 @@ export default function ArticleSection() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredArticles.map((article, index) => (
-                <article
+                <motion.article
                   key={`${article.id}-${selectedCategory}`}
                   className="relative z-10 glass-card rounded-2xl overflow-hidden border border-slate-600/30 hover:border-emerald-500/40 hover:shadow-xl duration-100 cursor-pointer group"
                   style={{ minHeight: "400px" }}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: index * 0.1 }}
                 >
                     <Link href={`/post/${article.id}`}>
                       {/* Article Image Placeholder */}
@@ -358,7 +361,7 @@ export default function ArticleSection() {
                         </button>
                       </div>
                     </Link>
-                  </article>
+                  </motion.article>
                 ))}
               </div>
           )}

@@ -16,28 +16,26 @@ export default function FeaturedSection() {
     setMounted(true);
   }, []);
 
+  // Simple animations for first section
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2, // เพิ่มเวลาเพื่อให้ side posts เรียงขึ้นมาทีละอัน
+        staggerChildren: 0.1,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { y: 50, opacity: 0 },
-    visible: (index) => ({
+    hidden: { y: 20, opacity: 0 },
+    visible: {
       y: 0,
       opacity: 1,
       transition: {
-        delay: index * 0.2, // ใช้ index เพื่อกำหนด delay ของแต่ละ post
-        type: "spring",
-        stiffness: 100,
-        damping: 10,
+        duration: 0.6,
       },
-    }),
+    },
   };
 
   useEffect(() => {
@@ -48,20 +46,13 @@ export default function FeaturedSection() {
       try {
         setIsLoading(true);
 
-        // fetch จาก cache route
-        const res = await fetch('/api/cache/posts?featured=true');
+        // fetch จาก cache route (aggregated short TTL)
+        const res = await fetch('/api/cache/posts?featured=true', { cache: 'no-store', keepalive: true });
         let posts = [];
 
         if (res.ok) {
           const data = await res.json();
-          posts = data.posts;
-        } else {
-          // Fallback: call main API silently
-          const fallbackRes = await fetch('/api/posts?where[featured][equals]=true');
-          if (fallbackRes.ok) {
-            const fallbackData = await fallbackRes.json();
-            posts = fallbackData.docs;
-          }
+          posts = data.posts || [];
         }
 
         // ถ้ายังไม่เจอ featured posts → take first 3 posts
@@ -83,26 +74,13 @@ export default function FeaturedSection() {
 
   // Skeleton Loading Components
   const SkeletonCard = ({ isMain = false }) => (
-    <motion.div
+    <div
       className={`glass-card rounded-2xl overflow-hidden border border-slate-700/30 ${isMain ? "lg:col-span-2" : ""
         }`}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
     >
       {/* Image Skeleton */}
       <div className={`relative ${isMain ? "h-64 md:h-80" : "h-48"} bg-gradient-to-br from-slate-700/40 to-slate-600/40 overflow-hidden`}>
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-500/30 to-transparent"
-          animate={{
-            x: ["-100%", "100%"],
-          }}
-          transition={{
-            duration: 1.5,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-        />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-500/30 to-transparent animate-pulse" />
         <div className="absolute top-4 left-4">
           <div className="w-16 h-6 bg-slate-600/40 rounded-full animate-pulse" />
         </div>
@@ -132,29 +110,14 @@ export default function FeaturedSection() {
 
         <div className="w-24 h-6 bg-slate-600/40 rounded animate-pulse" />
       </div>
-    </motion.div>
+    </div>
   );
 
   const SideSkeletonCard = () => (
-    <motion.div
-      className="glass-card rounded-xl p-6 border border-slate-700/30"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
+    <div className="glass-card rounded-xl p-6 border border-slate-700/30">
       <div className="flex items-start space-x-4">
         <div className="flex-shrink-0 w-16 h-16 bg-slate-600/40 rounded-lg overflow-hidden">
-          <motion.div
-            className="w-full h-full bg-gradient-to-r from-transparent via-slate-500/30 to-transparent"
-            animate={{
-              x: ["-100%", "100%"],
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          />
+          <div className="w-full h-full bg-gradient-to-r from-transparent via-slate-500/30 to-transparent animate-pulse" />
         </div>
         <div className="flex-1 min-w-0 space-y-3">
           <div className="flex items-center space-x-2">
@@ -175,7 +138,7 @@ export default function FeaturedSection() {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 
   return (
@@ -185,18 +148,7 @@ export default function FeaturedSection() {
     >
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden">
-        <motion.div
-          className="absolute top-20 right-20 w-64 h-64 bg-gradient-to-r from-amber-500/10 to-emerald-500/10 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.1, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 6,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
+        <div className="absolute top-20 right-20 w-64 h-64 bg-gradient-to-r from-amber-500/10 to-emerald-500/10 rounded-full blur-3xl opacity-30" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-6">
@@ -206,31 +158,29 @@ export default function FeaturedSection() {
             // Loading Skeleton
             <motion.div
               className="mt-20 grid grid-cols-1 lg:grid-cols-3 gap-8"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
             >
               {/* Main Featured Post Skeleton */}
               <SkeletonCard isMain={true} />
 
               {/* Side Posts Skeleton */}
-              <motion.div
-                className="space-y-6"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: 0.2 }}
-              >
+              <div className="space-y-6">
                 <SideSkeletonCard />
                 <SideSkeletonCard />
-              </motion.div>
+              </div>
             </motion.div>
           ) : featuredPosts.length > 0 ? (
-            <div className="mt-20 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <motion.div 
+              className="mt-20 grid grid-cols-1 lg:grid-cols-3 gap-8"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
               {/* Main Featured Post */}
               <motion.article
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
+                variants={itemVariants}
                 className="lg:col-span-2 group cursor-pointer"
               >
                 <Link href={`/post/${featuredPosts[0].id}`}>
@@ -284,7 +234,6 @@ export default function FeaturedSection() {
 
                       <motion.button
                         className="inline-flex items-center space-x-2 text-amber-400 hover:text-amber-300 font-medium transition-colors duration-300"
-                        whileHover={{ x: 5 }}
                       >
                         <span>Read More</span>
                         <i className="fas fa-arrow-right" />
@@ -296,27 +245,18 @@ export default function FeaturedSection() {
 
               {/* Side Posts */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.3 }}
+                variants={itemVariants}
                 className="space-y-6"
               >
                 {featuredPosts.slice(1).map((post, index) => (
-                  <motion.article
+                  <article
                     key={post.id}
                     className="glass-card rounded-xl p-6 border border-slate-700/30 hover:border-emerald-500/40 hover:shadow-lg cursor-pointer group"
-                    whileHover={{ y: -4 }}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1, type: "spring", stiffness: 100, damping: 10 }} // เพิ่ม delay ให้แต่ละ post ขึ้นมา
                   >
                     <Link href={`/post/${post.id}`}>
                       <div className="flex items-start space-x-4">
                         <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-amber-500/20 rounded-lg flex items-center justify-center">
-                          <motion.i
-                            className="fas fa-bookmark text-emerald-400"
-                            whileHover={{ scale: 1.2 }}
-                          />
+                          <i className="fas fa-bookmark text-emerald-400" />
                         </div>
 
                         <div className="flex-1 min-w-0">
@@ -341,28 +281,20 @@ export default function FeaturedSection() {
                             <span className="text-slate-500 text-xs">
                               {formatDate(post.date)}
                             </span>
-                            <motion.button
-                              className="text-emerald-400 hover:text-emerald-300 transition-colors duration-300"
-                              whileHover={{ scale: 1.1 }}
-                            >
+                            <button className="text-emerald-400 hover:text-emerald-300 transition-colors duration-300">
                               <i className="fas fa-chevron-right" />
-                            </motion.button>
+                            </button>
                           </div>
                         </div>
                       </div>
                     </Link>
-                  </motion.article>
+                  </article>
                 ))}
               </motion.div>
-            </div>
+            </motion.div>
           ) : (
             // Empty State
-            <motion.div
-              className="text-center py-20"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
+            <div className="text-center py-20">
               <div className="glass-card p-8 rounded-2xl max-w-md mx-auto">
                 <i className="fas fa-star text-4xl text-amber-400/60 mb-4" />
                 <h3 className="text-lg font-medium text-slate-300 mb-2">
@@ -372,7 +304,7 @@ export default function FeaturedSection() {
                   Check back later for featured content.
                 </p>
               </div>
-            </motion.div>
+            </div>
           )}
         </div>
       </div>
